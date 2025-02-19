@@ -1,0 +1,1 @@
+const int RPM_ARBITATION_ID = 0x3A9;
