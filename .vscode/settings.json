@@ -4,14 +4,18 @@
     "idf.openOcdConfigs": [
         "board/esp32c6-builtin.cfg"
     ],
-    "idf.port": "/dev/tty.usbserial-210",
+    "idf.port": "/dev/tty.usbserial-110",
     "idf.toolsPath": "/Users/jack/.espressif",
     "files.associations": {
         "stdio.h": "c",
         "twai.h": "c",
         "gpio.h": "c",
         "operators.h": "c",
-        "main.h": "c"
+        "main.h": "c",
+        "led_strip.h": "c",
+        "led_strip_rmt.h": "c",
+        "led.h": "c",
+        "led_strip_spi.h": "c"
     },
     "idf.flashType": "UART"
 }

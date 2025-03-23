@@ -3,9 +3,13 @@ typedef struct {
     int message_id;
     float mult_factor;
     float add_factor; 
-    int offset; 
+    int offset;
     int length;
     bool bit_mode;
+    bool has_mask;
+    int mask;
+    bool is_little_endian;
+    bool is_signed;
 } Message_operator; 
 
 /**
@@ -17,23 +21,24 @@ typedef struct {
  */
 
 
-const int NUM_MESSAGE_OPERATORS = 2;
+const int NUM_MESSAGE_OPERATORS = 6;
 const Message_operator message_operators[] = {
     // define your operators here
-    // {"RPM", 0x0A5, 0.25, 0, 5, 2, false},
-    {"Engine Torque", 0x0A5, 0.5, -1023.5, 16, 12, true},
-    // {"Steering1", 0x301, -1/22.75, 1440, 2, 2, false},
-    // {"Steering2", 0x302, -1/22.75, 1440, 2, 2, false},
-    // {"Brake %", 0x0EF, -2, 250, 3, 1, false},
-    // {"Accelerator pedal %", 0x0D9, (1 / 40.0), 0, 16, 12, true},
+    // { .name = "bytesToIntLe", .message_id = 0x1,  .mult_factor = 1, .add_factor = 0, .offset = 3, .length = 2, .bit_mode = false, .has_mask = false, .mask = 0x0, .is_little_endian = true, .is_signed = true },
+    // { .name = "Engine Torque", .message_id = 0x0A5, .mult_factor = 0.5, .add_factor = -1023.5, .offset = 16, .length = 12, true, .has_mask = false, .mask = 0x0},
+    { .name = "speed_mph", .message_id = 0x1A1, .mult_factor = 0.015625 / 1.60934, .add_factor = 0, .offset = 2, .length = 2, .bit_mode = false, .has_mask = false, .mask = 0x0},
+    { .name = "rpm", .message_id = 0x0A5, .mult_factor = 0.25, .add_factor = 0, .offset = 5, .length = 2, .bit_mode = false, .has_mask = 0, .mask = 0x0},
+    { .name = "Steering", .message_id = 0x302, .mult_factor = -1.0/22.75, .add_factor = 1440, .offset = 2, .length = 2, .bit_mode = false, .has_mask = false, .mask = 0x0, .is_little_endian = true, .is_signed = false},
+    { .name = "Steering2", .message_id = 0x302, .mult_factor = 0.039555, .add_factor = -1296, .offset = 2, .length = 2, .bit_mode = false, .has_mask = false, .mask = 0x0, .is_little_endian = true, .is_signed = false},
+    { .name = "brake",  .message_id = 0x0EF, .mult_factor = -2.0, .add_factor = 250.0, .offset = 3, .length = 1, .bit_mode = false, .has_mask = false, .mask = 0x0, .is_little_endian = true, .is_signed = true},
+    { .name = "accelerator_pedal", .message_id = 0x0D9, .mult_factor = (1 / 40.0), .add_factor = 0, .offset = 16, .length = 12, .bit_mode = true, .has_mask = false, .mask = 0, .is_little_endian = true, .is_signed = true },
     // {"Fuel Range km", 0x330, 1 / 16.0, 0, 48, 12, true},
-    // {"Gear", 0x0F3, 1, -4, 16, 4, true},
-    {"Speed mph", 0x1A1, 0.015625 / 1.60934, 0, 2, 2, false}
+    // {.name = "gear", .message_id= 0x0F3, .mult_factor = 1,  .add_factor = -4, .offset = 5, .length = 1, .bit_mode = false, .has_mask = true, .mask = 0xf, .is_little_endian = true, .is_signed = true},
 };
 
 /**
  * Acceptance Mask
- * 0x0A5, 0x302, 0x0EF, 0x0D9
+ * 0x1A1, 0x0A5, 0x302, 0x0EF, 0x0D9
  * 
  * 00010100101
  * 01100000010
