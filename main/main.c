@@ -8,6 +8,11 @@
 #include "main.h"
 #include "operators.h"
 
+void log_datapoint(const char name[20], int64_t value)
+{
+    printf(">%s:%lld\n", name, value);
+}
+
 void process_message(twai_message_t *msg)
 {
     // no need to process remote request frames
@@ -19,7 +24,6 @@ void process_message(twai_message_t *msg)
     int msg_id = msg->identifier;
     uint8_t data_length = msg->data_length_code;
 
-    // printf("msg id %x\n", msg_id);
     for (int i = 0; i < NUM_MESSAGE_OPERATORS; i++)
     {
         if (msg_id == message_operators[i].message_id)
@@ -29,27 +33,21 @@ void process_message(twai_message_t *msg)
 
             if (message_operators[i].bit_mode)
             {
-                // printf("Skipping bit mode operator...\n");
-                // uint8_t payload_le[msg->data_length_code];
                 uint64_t value_le = 0;
 
                 for (unsigned int j = 0; j < data_length; j++)
                 {
                     uint64_t shifted_value = ((uint64_t)msg->data[j] << (8 * j));
-                    // printf("Payload[%d]: %llu\n", j, shifted_value);
-                    // payload_le[j] = msg->data[data_length - j - 1];
                     value_le = value_le + shifted_value;
-                    // printf("New value %llu\n", value_le);
                 }
-                // printf("%s: %llx\n", message_operators[i].name, value_le);
 
                 uint8_t num_bits = CHAR_BIT * sizeof(value_le);
-                // printf("num bits %d", num_bits);
                 value_le = value_le >> (message_operators[i].offset - num_bits);
                 int mask = (1 << message_operators[i].length) - 1;
                 int masked_value = value_le & mask;
                 float result = (masked_value * mult_factor) + add_factor;
-                printf(">%s:%f\n", message_operators[i].name, result);
+
+                log_datapoint(message_operators[i].name, result);
             }
             else
             {
@@ -72,11 +70,12 @@ void process_message(twai_message_t *msg)
                     if (message_operators[i].has_mask)
                     {
                         int64_t masked_value = value & message_operators[i].mask;
-                        printf(">%s:%lld\n", message_operators[i].name, masked_value);
+
+                        log_datapoint(message_operators[i].name, masked_value);
                     }
                     else
                     {
-                        printf(">%s:%lld\n", message_operators[i].name, value);
+                        log_datapoint(message_operators[i].name, value);
                     }
                 }
                 else
@@ -92,8 +91,8 @@ void process_message(twai_message_t *msg)
                     }
                     value = value * mult_factor;
                     value = value + add_factor;
-                    // printf("%s:%d\n", message_operators[i].name, value);
-                    printf(">%s:%lld\n", message_operators[i].name, value);
+
+                    log_datapoint(message_operators[i].name, value);
                 }
             }
         }
@@ -132,13 +131,6 @@ void app_main(void)
         return;
     }
 
-    // ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
-    // uint32_t idx = 3;
-    // uint32_t red = 0xFFFF;
-    // uint32_t blue = 0xFFFF;
-    // uint32_t green = 0;
-    // ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, idx, red, green, blue));
-
     int i = 1;
     while (true)
     {
@@ -169,7 +161,7 @@ void app_main(void)
                 printf("\n");
             }
             i++;
-            // printf("Received msg\n");
+
             switch (msg.identifier)
             {
             case 0x0A5:
@@ -183,7 +175,6 @@ void app_main(void)
             default:
                 continue;
             }
-            // process_message(&msg);
         }
         else
         {
