@@ -4,14 +4,13 @@
 
 #include "driver/gpio.h"
 #include "driver/twai.h"
+#include "esp_log.h"
 
 #include "main.h"
 #include "operators.h"
+#include "ble_service.h"
 
-void log_datapoint(const char name[20], int64_t value)
-{
-    printf(">%s:%lld\n", name, value);
-}
+// Note: log_datapoint function is now in ble_service.c to enable BLE transmission
 
 void process_message(twai_message_t *msg)
 {
@@ -101,33 +100,42 @@ void process_message(twai_message_t *msg)
 
 void app_main(void)
 {
+    ESP_LOGI("CAN_APP", "Starting CAN BUS application with BLE support");
+
+    // Initialize BLE first
+    ble_init();
+
+    ESP_LOGI("CAN_APP", "BLE initialized, starting CAN bus");
+
     twai_handle_t twai_bus_0;
 
-    twai_general_config_t g_config_0 = SNIFFER_GENERAL_CONFIG;
-    twai_timing_config_t t_config_0 = PT_CANBUS_TIMING_CONFIG;
-    twai_filter_config_t f_config_0 = PT_CANBUS_FILTER_CONFIG;
+    const gpio_num_t TX_GPIO = GPIO_NUM_0;
+    const gpio_num_t RX_GPIO = GPIO_NUM_1;
+    twai_general_config_t g_config_0 = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO, RX_GPIO, TWAI_MODE_NORMAL);
+    twai_timing_config_t t_config_0 = TWAI_TIMING_CONFIG_500KBITS();
+    twai_filter_config_t f_config_0 = {.acceptance_code = 0, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
     TickType_t RX_TIMEOUT = pdMS_TO_TICKS(5000);
 
     // Install driver for TWAI bus 0
     g_config_0.controller_id = 0;
     if (twai_driver_install_v2(&g_config_0, &t_config_0, &f_config_0, &twai_bus_0) == ESP_OK)
     {
-        printf("TWAI [0] Driver installed\n");
+        ESP_LOGI("CAN_APP", "TWAI [0] Driver installed");
     }
     else
     {
-        printf("Failed to install TWAI [0] driver\n");
+        ESP_LOGE("CAN_APP", "Failed to install TWAI [0] driver");
         return;
     }
 
     // Start TWAI driver
     if (twai_start_v2(twai_bus_0) == ESP_OK)
     {
-        printf("TWAI [0] Driver started\n");
+        ESP_LOGI("CAN_APP", "TWAI [0] Driver started");
     }
     else
     {
-        printf("Failed to start TWAI [0] driver\n");
+        ESP_LOGE("CAN_APP", "Failed to start TWAI [0] driver");
         return;
     }
 
@@ -144,21 +152,21 @@ void app_main(void)
                 twai_get_status_info_v2(twai_bus_0, &twai_status);
                 if (twai_status.rx_error_counter > 0)
                 {
-                    printf("RX_ERROR_COUNT=%lu\t", twai_status.rx_error_counter);
+                    ESP_LOGW("CAN_APP", "RX_ERROR_COUNT=%lu", twai_status.rx_error_counter);
                 }
                 if (twai_status.rx_missed_count > 0)
                 {
-                    printf("RX_MISSED_COUNT=%lu\t", twai_status.rx_missed_count);
+                    ESP_LOGW("CAN_APP", "RX_MISSED_COUNT=%lu", twai_status.rx_missed_count);
                 }
                 if (twai_status.rx_overrun_count > 0)
                 {
-                    printf("RX_OVERRUN_COUNT=%lu\t", twai_status.rx_overrun_count);
+                    ESP_LOGW("CAN_APP", "RX_OVERRUN_COUNT=%lu", twai_status.rx_overrun_count);
                 }
                 if (twai_status.msgs_to_rx > 0)
                 {
-                    printf("*******RX_QUEUE_SIZE=%lu\t", twai_status.rx_overrun_count);
+                    ESP_LOGW("CAN_APP", "RX_QUEUE_SIZE=%lu", twai_status.rx_overrun_count);
                 }
-                printf("\n");
+                ESP_LOGI("CAN_APP", "CAN bus status check complete");
             }
             i++;
 
@@ -178,7 +186,7 @@ void app_main(void)
         }
         else
         {
-            printf("Timeout or other error receiving message\n");
+            ESP_LOGW("CAN_APP", "Timeout or other error receiving message");
             continue;
         }
     }
