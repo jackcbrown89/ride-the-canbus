@@ -816,9 +816,6 @@ void can_ble_task(void *pvParameter)
 
 void log_datapoint(const char name[20], int64_t value)
 {
-    // Still print to console
-    printf(">%s:%lld\n", name, value);
-
     // Send to BLE if queue exists
     if (can_data_queue)
     {
@@ -844,10 +841,6 @@ void ble_init(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
-#if CONFIG_EXAMPLE_CI_PIPELINE_ID
-    memcpy(device_name, esp_bluedroid_get_example_name(), ESP_BLE_ADV_NAME_LEN_MAX);
-#endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
@@ -878,7 +871,7 @@ void ble_init(void)
         ESP_LOGE(GATTS_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
-    // Note: Avoid performing time-consuming operations within callback functions.
+
     ret = esp_ble_gatts_register_callback(gatts_event_handler);
     if (ret)
     {
