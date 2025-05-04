@@ -20,7 +20,12 @@
         "ble_service.h": "c",
         "esp_log.h": "c",
         "nvs_flash.h": "c",
-        "esp_gap_ble_api.h": "c"
+        "esp_gap_ble_api.h": "c",
+        "esp_bt_defs.h": "c",
+        "esp_bt_main.h": "c",
+        "esp_bt_device.h": "c",
+        "esp_gatt_common_api.h": "c",
+        "sdkconfig.h": "c"
     },
     "idf.flashType": "UART"
 }
