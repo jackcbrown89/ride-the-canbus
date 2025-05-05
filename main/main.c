@@ -10,8 +10,6 @@
 #include "operators.h"
 #include "ble_service.h"
 
-// Note: log_datapoint function is now in ble_service.c to enable BLE transmission
-
 void process_message(twai_message_t *msg)
 {
     // no need to process remote request frames

@@ -573,7 +573,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         esp_ble_gap_start_advertising(&adv_params);
         break;
     case ESP_GATTS_CONF_EVT:
-        ESP_LOGI(GATTS_TAG, "Confirm receive, status %d, attr_handle %d", param->conf.status, param->conf.handle);
+        // ESP_LOGI(GATTS_TAG, "Confirm receive, status %d, attr_handle %d", param->conf.status, param->conf.handle);
         if (param->conf.status != ESP_GATT_OK)
         {
             ESP_LOG_BUFFER_HEX(GATTS_TAG, param->conf.value, param->conf.len);
@@ -808,7 +808,7 @@ void can_ble_task(void *pvParameter)
                                             (uint8_t *)notification_data,
                                             false);
 
-                ESP_LOGI(GATTS_TAG, "Sent notification: %s", notification_data);
+                // ESP_LOGI(GATTS_TAG, "Sent notification: %s", notification_data);
             }
         }
     }

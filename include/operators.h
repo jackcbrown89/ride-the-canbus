@@ -15,12 +15,13 @@ typedef struct
     float add_factor;  // Addition factor
     bool is_signed;    // Whether the value is signed
     bool bit_mode;     // Whether to operate on bits rather than bytes
-    bool has_mask;     // Whether to apply a mask
-    int64_t mask;      // Mask to apply if has_mask is true
+    bool is_little_endian;
+    bool has_mask; // Whether to apply a mask
+    int64_t mask;  // Mask to apply if has_mask is true
 } message_operator_t;
 
 // Number of defined message operators
-#define NUM_MESSAGE_OPERATORS 15
+#define NUM_MESSAGE_OPERATORS 7
 
 // Array of message operators
 extern const message_operator_t message_operators[NUM_MESSAGE_OPERATORS];
