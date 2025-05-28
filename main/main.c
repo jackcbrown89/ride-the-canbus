@@ -15,7 +15,6 @@
 
 // Queue handle for CAN messages
 static QueueHandle_t can_msg_queue;
-#define CAN_MSG_QUEUE_SIZE 10
 
 // Task handle for CAN message processing
 static TaskHandle_t can_process_task_handle;
@@ -199,10 +198,10 @@ void app_main(void)
             case 0x1A1:
             case 0x302:
                 // Send message to queue instead of processing directly
-                // if (xQueueSend(can_msg_queue, &msg, 0) != pdPASS)
-                // {
-                //     ESP_LOGW("CAN_APP", "Failed to queue CAN message - queue full");
-                // }
+                if (xQueueSend(can_msg_queue, &msg, 0) != pdPASS)
+                {
+                    ESP_LOGW("CAN_APP", "Failed to queue CAN message - queue full");
+                }
                 break;
             default:
                 continue;

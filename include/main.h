@@ -3,6 +3,8 @@
 
 #include "driver/twai.h"
 
+#define CAN_MSG_QUEUE_SIZE 100
+
 // CAN bus configuration macros
 #define SNIFFER_GENERAL_CONFIG             \
     {                                      \

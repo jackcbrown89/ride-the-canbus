@@ -5,7 +5,7 @@
     "idf.openOcdConfigs": [
         "board/esp32c6-builtin.cfg"
     ],
-    "idf.port": "/dev/tty.usbmodem1101",
+    "idf.port": "/dev/tty.usbmodem2101",
     "idf.toolsPath": "/Users/jack/.espressif",
     "files.associations": {
         "stdio.h": "c",
@@ -29,5 +29,6 @@
         "stdint.h": "c",
         "stdbool.h": "c"
     },
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "idf.pythonInstallPath": "/opt/homebrew/bin/python3"
 }
