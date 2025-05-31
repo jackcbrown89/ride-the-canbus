@@ -154,9 +154,9 @@ void app_main(void)
 
     twai_handle_t twai_bus_0;
 
-    const gpio_num_t TX_GPIO = GPIO_NUM_0;
-    const gpio_num_t RX_GPIO = GPIO_NUM_1;
-    twai_general_config_t g_config_0 = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO, RX_GPIO, TWAI_MODE_NORMAL);
+    const gpio_num_t TX_GPIO = GPIO_NUM_1;
+    const gpio_num_t RX_GPIO = GPIO_NUM_0;
+    twai_general_config_t g_config_0 = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO, RX_GPIO, TWAI_MODE_LISTEN_ONLY);
     twai_timing_config_t t_config_0 = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config_0 = {.acceptance_code = 0, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
     TickType_t RX_TIMEOUT = pdMS_TO_TICKS(5000);
