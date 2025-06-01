@@ -159,7 +159,7 @@ void app_main(void)
     twai_general_config_t g_config_0 = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO, RX_GPIO, TWAI_MODE_LISTEN_ONLY);
     twai_timing_config_t t_config_0 = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config_0 = {.acceptance_code = 0, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
-    TickType_t RX_TIMEOUT = pdMS_TO_TICKS(5000);
+    TickType_t RX_TIMEOUT = pdMS_TO_TICKS(1000);
 
     // Install driver for TWAI bus 0
     g_config_0.controller_id = 0;
@@ -209,7 +209,18 @@ void app_main(void)
         }
         else
         {
-            ESP_LOGW("CAN_APP", "Timeout or other error receiving message");
+            ESP_LOGW("CAN_APP", "Timeout or other error receiving message. Sending test message.");
+
+            twai_message_t test_msg = {
+                .identifier = 0x0D9,
+                .data_length_code = 8,
+                .data = {0x1F, 0xFE, 0x00, 0x10, 0x00, 0xF0, 0x7F, 0xCF},
+            };
+            if (xQueueSend(can_msg_queue, &test_msg, 0) != pdPASS)
+            {
+                ESP_LOGW("CAN_APP", "Failed to queue CAN message - queue full");
+            }
+
             continue;
         }
     }
