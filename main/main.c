@@ -4,14 +4,20 @@
 
 #include "driver/gpio.h"
 #include "driver/twai.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
 
 #include "main.h"
 #include "operators.h"
+#include "ble_service.h"
 
-void log_datapoint(const char name[20], int64_t value)
-{
-    printf(">%s:%lld\n", name, value);
-}
+// Queue handle for CAN messages
+static QueueHandle_t can_msg_queue;
+
+// Task handle for CAN message processing
+static TaskHandle_t can_process_task_handle;
 
 void process_message(twai_message_t *msg)
 {
@@ -99,69 +105,90 @@ void process_message(twai_message_t *msg)
     }
 }
 
+// Task to process CAN messages
+void can_process_task(void *pvParameter)
+{
+    twai_message_t msg;
+
+    while (1)
+    {
+        // Wait for message from queue
+        if (xQueueReceive(can_msg_queue, &msg, portMAX_DELAY))
+        {
+            process_message(&msg);
+        }
+    }
+}
+
 void app_main(void)
 {
+    ESP_LOGI("CAN_APP", "Starting CAN BUS application with BLE support");
+
+    // Initialize BLE first
+    ble_init();
+
+    ESP_LOGI("CAN_APP", "BLE initialized, starting CAN bus");
+
+    // Create queue for CAN messages
+    can_msg_queue = xQueueCreate(CAN_MSG_QUEUE_SIZE, sizeof(twai_message_t));
+    if (can_msg_queue == NULL)
+    {
+        ESP_LOGE("CAN_APP", "Failed to create CAN message queue");
+        return;
+    }
+
+    // Create task for processing CAN messages
+    BaseType_t task_created = xTaskCreate(
+        can_process_task,
+        "can_process_task",
+        4096,
+        NULL,
+        5,
+        &can_process_task_handle);
+
+    if (task_created != pdPASS)
+    {
+        ESP_LOGE("CAN_APP", "Failed to create CAN processing task");
+        return;
+    }
+
     twai_handle_t twai_bus_0;
 
-    twai_general_config_t g_config_0 = SNIFFER_GENERAL_CONFIG;
-    twai_timing_config_t t_config_0 = PT_CANBUS_TIMING_CONFIG;
-    twai_filter_config_t f_config_0 = PT_CANBUS_FILTER_CONFIG;
-    TickType_t RX_TIMEOUT = pdMS_TO_TICKS(5000);
+    const gpio_num_t TX_GPIO = GPIO_NUM_1;
+    const gpio_num_t RX_GPIO = GPIO_NUM_0;
+    twai_general_config_t g_config_0 = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO, RX_GPIO, TWAI_MODE_LISTEN_ONLY);
+    twai_timing_config_t t_config_0 = TWAI_TIMING_CONFIG_500KBITS();
+    twai_filter_config_t f_config_0 = {.acceptance_code = 0, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
+    TickType_t RX_TIMEOUT = pdMS_TO_TICKS(1000);
 
     // Install driver for TWAI bus 0
     g_config_0.controller_id = 0;
     if (twai_driver_install_v2(&g_config_0, &t_config_0, &f_config_0, &twai_bus_0) == ESP_OK)
     {
-        printf("TWAI [0] Driver installed\n");
+        ESP_LOGI("CAN_APP", "TWAI [0] Driver installed");
     }
     else
     {
-        printf("Failed to install TWAI [0] driver\n");
+        ESP_LOGE("CAN_APP", "Failed to install TWAI [0] driver");
         return;
     }
 
     // Start TWAI driver
     if (twai_start_v2(twai_bus_0) == ESP_OK)
     {
-        printf("TWAI [0] Driver started\n");
+        ESP_LOGI("CAN_APP", "TWAI [0] Driver started");
     }
     else
     {
-        printf("Failed to start TWAI [0] driver\n");
+        ESP_LOGE("CAN_APP", "Failed to start TWAI [0] driver");
         return;
     }
 
-    int i = 1;
     while (true)
     {
         twai_message_t msg;
         if (twai_receive_v2(twai_bus_0, &msg, RX_TIMEOUT) == ESP_OK)
         {
-            if ((i % 1000) == 0)
-            {
-                i = 1;
-                twai_status_info_t twai_status;
-                twai_get_status_info_v2(twai_bus_0, &twai_status);
-                if (twai_status.rx_error_counter > 0)
-                {
-                    printf("RX_ERROR_COUNT=%lu\t", twai_status.rx_error_counter);
-                }
-                if (twai_status.rx_missed_count > 0)
-                {
-                    printf("RX_MISSED_COUNT=%lu\t", twai_status.rx_missed_count);
-                }
-                if (twai_status.rx_overrun_count > 0)
-                {
-                    printf("RX_OVERRUN_COUNT=%lu\t", twai_status.rx_overrun_count);
-                }
-                if (twai_status.msgs_to_rx > 0)
-                {
-                    printf("*******RX_QUEUE_SIZE=%lu\t", twai_status.rx_overrun_count);
-                }
-                printf("\n");
-            }
-            i++;
-
             switch (msg.identifier)
             {
             case 0x0A5:
@@ -170,7 +197,11 @@ void app_main(void)
             case 0x0F3:
             case 0x1A1:
             case 0x302:
-                process_message(&msg);
+                // Send message to queue instead of processing directly
+                if (xQueueSend(can_msg_queue, &msg, 0) != pdPASS)
+                {
+                    ESP_LOGW("CAN_APP", "Failed to queue CAN message - queue full");
+                }
                 break;
             default:
                 continue;
@@ -178,7 +209,18 @@ void app_main(void)
         }
         else
         {
-            printf("Timeout or other error receiving message\n");
+            ESP_LOGW("CAN_APP", "Timeout or other error receiving message. Sending test message.");
+
+            twai_message_t test_msg = {
+                .identifier = 0x0D9,
+                .data_length_code = 8,
+                .data = {0x1F, 0xFE, 0x00, 0x10, 0x00, 0xF0, 0x7F, 0xCF},
+            };
+            if (xQueueSend(can_msg_queue, &test_msg, 0) != pdPASS)
+            {
+                ESP_LOGW("CAN_APP", "Failed to queue CAN message - queue full");
+            }
+
             continue;
         }
     }

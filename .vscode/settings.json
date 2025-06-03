@@ -5,7 +5,7 @@
     "idf.openOcdConfigs": [
         "board/esp32c6-builtin.cfg"
     ],
-    "idf.port": "/dev/tty.usbserial-210",
+    "idf.port": "/dev/tty.usbmodem2101",
     "idf.toolsPath": "/Users/jack/.espressif",
     "files.associations": {
         "stdio.h": "c",
@@ -16,7 +16,19 @@
         "led_strip.h": "c",
         "led_strip_rmt.h": "c",
         "led.h": "c",
-        "led_strip_spi.h": "c"
+        "led_strip_spi.h": "c",
+        "ble_service.h": "c",
+        "esp_log.h": "c",
+        "nvs_flash.h": "c",
+        "esp_gap_ble_api.h": "c",
+        "esp_bt_defs.h": "c",
+        "esp_bt_main.h": "c",
+        "esp_bt_device.h": "c",
+        "esp_gatt_common_api.h": "c",
+        "sdkconfig.h": "c",
+        "stdint.h": "c",
+        "stdbool.h": "c"
     },
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "idf.pythonInstallPath": "/opt/homebrew/bin/python3"
 }
