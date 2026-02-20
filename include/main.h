@@ -1,16 +1,45 @@
-// SNIFFER_MODE
+#ifndef MAIN_H
+#define MAIN_H
 
-// const gpio_num_t TX_GPIO = GPIO_NUM_23;
-// const gpio_num_t RX_GPIO = GPIO_NUM_15;
+#include "driver/twai.h"
 
-// twai_general_config_t SNIFFER_GENERAL_CONFIG = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO, RX_GPIO, TWAI_MODE_LISTEN_ONLY);
-// twai_timing_config_t PT_CANBUS_TIMING_CONFIG = TWAI_TIMING_CONFIG_500KBITS();
-// twai_filter_config_t PT_CANBUS_FILTER_CONFIG = {.acceptance_code = 0, .acceptance_mask =0xFFFFFFFF, .single_filter = true};
+#define CAN_MSG_QUEUE_SIZE 100
 
-// ACK_MODE
-const gpio_num_t TX_GPIO = GPIO_NUM_0;
-const gpio_num_t RX_GPIO = GPIO_NUM_1;
+// CAN bus configuration macros
+#define SNIFFER_GENERAL_CONFIG             \
+    {                                      \
+        .mode = TWAI_MODE_LISTEN_ONLY,     \
+        .tx_io = TWAI_IO_UNUSED,           \
+        .rx_io = GPIO_NUM_21,              \
+        .clkout_io = TWAI_IO_UNUSED,       \
+        .bus_off_io = TWAI_IO_UNUSED,      \
+        .tx_queue_len = 0,                 \
+        .rx_queue_len = 100,               \
+        .alerts_enabled = TWAI_ALERT_NONE, \
+        .clkout_divider = 0,               \
+        .intr_flags = ESP_INTR_FLAG_IRAM,  \
+    }
 
-twai_general_config_t SNIFFER_GENERAL_CONFIG = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO, RX_GPIO, TWAI_MODE_NORMAL);
-twai_timing_config_t PT_CANBUS_TIMING_CONFIG = TWAI_TIMING_CONFIG_500KBITS();
-twai_filter_config_t PT_CANBUS_FILTER_CONFIG = {.acceptance_code = 0, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
+// Define CAN bus timing configuration for common speeds
+// 500 Kbps configuration
+#define PT_CANBUS_TIMING_CONFIG   \
+    {                             \
+        .brp = 8,                 \
+        .tseg_1 = 15,             \
+        .tseg_2 = 4,              \
+        .sjw = 3,                 \
+        .triple_sampling = false, \
+    }
+
+// Define CAN bus filter (accept all messages)
+#define PT_CANBUS_FILTER_CONFIG        \
+    {                                  \
+        .acceptance_code = 0,          \
+        .acceptance_mask = 0xFFFFFFFF, \
+        .single_filter = true,         \
+    }
+
+// Process a CAN message
+void process_message(twai_message_t *msg);
+
+#endif /* MAIN_H */
